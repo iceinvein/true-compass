@@ -41,3 +41,8 @@ app-example
 # generated native folders
 /ios
 /android
+
+# Store assets (optional - uncomment to exclude large screenshot files)
+# store-assets/screenshots/
+# store-assets/promotional/*.png
+# store-assets/promotional/*.jpg
