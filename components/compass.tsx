@@ -1,6 +1,7 @@
 import { useCompass } from "@/hooks/use-compass";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import Constants from "expo-constants";
 import * as Haptics from "expo-haptics";
 import { useEffect, useState } from "react";
 import { Alert, Dimensions, Pressable, StyleSheet, View } from "react-native";
@@ -11,6 +12,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { CompassError } from "./compass-error";
 import { LoadingCompass } from "./loading-compass";
+import { SimulationControls } from "./simulation-controls";
 import { ThemedText } from "./themed-text";
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
@@ -27,9 +29,19 @@ export function Compass({
 	colorScheme = "dark",
 	onToggleTheme,
 }: CompassProps) {
+	// Detect if running in iOS Simulator (not Expo Go on real device)
+	// Constants.isDevice is false for both simulator AND Expo Go
+	// Check executionEnvironment: 'standalone' = production app, 'storeClient' = Expo Go
+	const isSimulator =
+		!Constants.isDevice && Constants.executionEnvironment === "standalone";
+	const [simulatedHeading, setSimulatedHeading] = useState<number>(0);
+	const [showSimulationControls, setShowSimulationControls] =
+		useState<boolean>(true);
+
 	const { data, isLoading, error } = useCompass({
 		axisFlipEW,
 		useCrossProduct: true,
+		simulatedHeading: isSimulator ? simulatedHeading : undefined,
 	});
 	const rotation = useSharedValue(0);
 	const [showLowAccuracyHint, setShowLowAccuracyHint] = useState(false);
@@ -39,6 +51,38 @@ export function Compass({
 	> | null>(null);
 
 	const tintColor = useThemeColor({}, "tint");
+
+	// Double-tap handler for simulation controls (simulator only)
+	const [doubleTapCount, setDoubleTapCount] = useState(0);
+	const [doubleTapTimeout, setDoubleTapTimeout] = useState<ReturnType<
+		typeof setTimeout
+	> | null>(null);
+
+	const handleCompassDoubleTap = () => {
+		if (!isSimulator) return;
+
+		if (doubleTapTimeout) {
+			clearTimeout(doubleTapTimeout);
+		}
+
+		const newCount = doubleTapCount + 1;
+		setDoubleTapCount(newCount);
+
+		if (newCount === 2) {
+			// Double tap detected - toggle controls
+			Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+			setShowSimulationControls(!showSimulationControls);
+			setDoubleTapCount(0);
+			setDoubleTapTimeout(null);
+		} else {
+			// Wait for second tap
+			const timeout = setTimeout(() => {
+				setDoubleTapCount(0);
+				setDoubleTapTimeout(null);
+			}, 300);
+			setDoubleTapTimeout(timeout);
+		}
+	};
 
 	// Triple-tap handler for dev settings
 	const handleHeadingPress = () => {
@@ -123,14 +167,17 @@ export function Compass({
 		}
 	}, [data?.rotationDeg, rotation]);
 
-	// Cleanup timeout on unmount
+	// Cleanup timeouts on unmount
 	useEffect(() => {
 		return () => {
 			if (tapTimeout) {
 				clearTimeout(tapTimeout);
 			}
+			if (doubleTapTimeout) {
+				clearTimeout(doubleTapTimeout);
+			}
 		};
-	}, [tapTimeout]);
+	}, [tapTimeout, doubleTapTimeout]);
 
 	const compassStyle = useAnimatedStyle(() => ({
 		transform: [{ rotate: `${rotation.value}deg` }],
@@ -219,11 +266,12 @@ export function Compass({
 			)}
 
 			{/* Compass container */}
-			<View
+			<Pressable
 				style={[
 					styles.compassContainer,
 					{ width: COMPASS_SIZE, height: COMPASS_SIZE },
 				]}
+				onPress={handleCompassDoubleTap}
 			>
 				{/* Outer ring */}
 				<View
@@ -323,9 +371,19 @@ export function Compass({
 				<View
 					style={[styles.northIndicator, { borderBottomColor: headingColor }]}
 				/>
-			</View>
+			</Pressable>
 
 			{/* Accuracy indicator - removed, handled by hint banner instead */}
+
+			{/* Simulation controls - only show in simulator */}
+			{isSimulator && showSimulationControls && (
+				<SimulationControls
+					onHeadingChange={setSimulatedHeading}
+					currentHeading={simulatedHeading}
+					colorScheme={colorScheme}
+					onClose={() => setShowSimulationControls(false)}
+				/>
+			)}
 		</View>
 	);
 }

@@ -1,6 +1,7 @@
 import { Compass } from "@/components/compass";
 import { SetupScreen } from "@/components/setup-screen";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import Constants from "expo-constants";
 import { useKeepAwake } from "expo-keep-awake";
 import { useEffect, useState } from "react";
 import {
@@ -22,7 +23,21 @@ export default function CompassScreen() {
 	const [axisFlip, setAxisFlip] = useState<boolean>(false);
 	const [colorScheme, setColorScheme] = useState<"light" | "dark" | null>(null);
 
+	// Detect if running in iOS Simulator (not Expo Go on real device)
+	// Constants.isDevice is false for both simulator AND Expo Go
+	// Check executionEnvironment: 'standalone' = production app, 'storeClient' = Expo Go
+	const isSimulator =
+		!Constants.isDevice && Constants.executionEnvironment === "standalone";
+
 	useEffect(() => {
+		// In simulator mode, skip setup automatically
+		if (isSimulator) {
+			setSetupComplete(true);
+			setAxisFlip(true); // Default to true for cross-product fusion
+			setColorScheme(systemColorScheme || "dark");
+			return;
+		}
+
 		// Check if setup was already completed and load theme preference
 		AsyncStorage.multiGet([SETUP_COMPLETE_KEY, AXIS_FLIP_KEY, THEME_KEY]).then(
 			async (values) => {
@@ -42,7 +57,7 @@ export default function CompassScreen() {
 				setColorScheme(savedTheme || systemColorScheme || "dark");
 			},
 		);
-	}, [systemColorScheme]);
+	}, [systemColorScheme, isSimulator]);
 
 	const handleSetupComplete = async (detectedFlip: boolean) => {
 		await AsyncStorage.multiSet([

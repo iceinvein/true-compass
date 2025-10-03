@@ -1,3 +1,4 @@
+import Constants from "expo-constants";
 import { Accelerometer, Magnetometer } from "expo-sensors";
 import { useEffect, useRef, useState } from "react";
 
@@ -107,14 +108,24 @@ function getCardinalDirection(heading: number): { name: string; abbr: string } {
 	return { name: "North", abbr: "N" }; // Fallback
 }
 
-
-
-type CompassOptions = { updateInterval?: number; axisFlipEW?: boolean; useCrossProduct?: boolean };
+type CompassOptions = {
+	updateInterval?: number;
+	axisFlipEW?: boolean;
+	useCrossProduct?: boolean;
+	simulatedHeading?: number; // For simulator mode - set specific heading
+};
 export function useCompass(options?: number | CompassOptions): CompassState {
-	const opts: CompassOptions = typeof options === "number" ? { updateInterval: options } : (options ?? {});
+	const opts: CompassOptions =
+		typeof options === "number" ? { updateInterval: options } : (options ?? {});
 	const updateMs = opts.updateInterval ?? 100;
 	const axisFlipEW = !!opts.axisFlipEW;
 	const useCross = opts.useCrossProduct !== false; // default true
+	const simulatedHeading = opts.simulatedHeading;
+
+	// Detect if running in iOS Simulator (not Expo Go on real device)
+	// Constants.isDevice is false for both simulator AND Expo Go
+	// Check executionEnvironment: 'standalone' = production app, 'storeClient' = Expo Go
+	const isSimulator = !Constants.isDevice && Constants.executionEnvironment === 'standalone';
 
 	const [state, setState] = useState<CompassState>({
 		data: null,
@@ -129,7 +140,9 @@ export function useCompass(options?: number | CompassOptions): CompassState {
 	const latestAccelRef = useRef<{ ax: number; ay: number; az: number } | null>(
 		null,
 	);
-	const accelLPRef = useRef<{ ax: number; ay: number; az: number } | null>(null);
+	const accelLPRef = useRef<{ ax: number; ay: number; az: number } | null>(
+		null,
+	);
 	const magHistoryRef = useRef<number[]>([]);
 	const emaMagRef = useRef<number | null>(null);
 	const displayAccRef = useRef<number>(0);
@@ -142,17 +155,47 @@ export function useCompass(options?: number | CompassOptions): CompassState {
 
 		const initializeCompass = async () => {
 			try {
+				// SIMULATION MODE: If in simulator and simulatedHeading is provided
+				if (isSimulator && simulatedHeading !== undefined) {
+					const { name: cardinalDirection, abbr: cardinalAbbreviation } =
+						getCardinalDirection(simulatedHeading);
+
+					setState({
+						data: {
+							heading: Math.round(simulatedHeading),
+							accuracy: 100, // Perfect accuracy in simulation
+							isCalibrated: true,
+							cardinalDirection,
+							cardinalAbbreviation,
+							rotationDeg: simulatedHeading,
+							isLevel: true,
+							tiltDeg: 0,
+							rollDeg: 0,
+							pitchDeg: 0,
+						},
+						isAvailable: true,
+						isLoading: false,
+						error: null,
+					});
+					return;
+				}
+
 				// Check if device supports magnetometer
 				const isAvailable = await Magnetometer.isAvailableAsync();
 
 				if (!isMounted) return;
 
 				if (!isAvailable) {
+					// If in simulator, provide helpful message
+					const errorMsg = isSimulator
+						? "Simulator mode: Pass simulatedHeading prop to useCompass to test"
+						: "Magnetometer not available on this device";
+
 					setState({
 						data: null,
 						isAvailable: false,
 						isLoading: false,
-						error: "Magnetometer not available on this device",
+						error: errorMsg,
 					});
 					return;
 				}
@@ -244,11 +287,12 @@ export function useCompass(options?: number | CompassOptions): CompassState {
 					magHistoryRef.current.push(magnitude);
 					if (magHistoryRef.current.length > 60) magHistoryRef.current.shift();
 					const hist = magHistoryRef.current;
-					const mean = hist.reduce((a, b) => a + b, 0) / Math.max(hist.length, 1);
+					const mean =
+						hist.reduce((a, b) => a + b, 0) / Math.max(hist.length, 1);
 					const variance =
 						hist.length > 1
 							? hist.reduce((a, b) => a + (b - mean) * (b - mean), 0) /
-							  (hist.length - 1)
+								(hist.length - 1)
 							: 0;
 					const stddev = Math.sqrt(variance);
 					// Score 1: field strength proximity to [30,60] µT
@@ -256,7 +300,8 @@ export function useCompass(options?: number | CompassOptions): CompassState {
 					let fieldScore = 0;
 					if (m <= 15 || m >= 90) fieldScore = 0;
 					else if (m < 30) fieldScore = 100 * ((m - 15) / 15);
-					else if (m <= 60) fieldScore = 100; // ideal band
+					else if (m <= 60)
+						fieldScore = 100; // ideal band
 					else fieldScore = Math.max(0, 100 - ((m - 60) / 30) * 100);
 					// Score 2: stability (lower stddev is better)
 					const varianceScore = Math.max(0, 100 - Math.min(100, stddev * 50));
@@ -284,10 +329,12 @@ export function useCompass(options?: number | CompassOptions): CompassState {
 					}
 
 					// Combine and smooth for display
-					let accuracy = 0.5 * fieldScore + 0.3 * varianceScore + 0.2 * tiltScore;
+					let accuracy =
+						0.5 * fieldScore + 0.3 * varianceScore + 0.2 * tiltScore;
 					const accAlpha = 0.25;
 					displayAccRef.current =
-						accAlpha * accuracy + (1 - accAlpha) * (displayAccRef.current ?? accuracy);
+						accAlpha * accuracy +
+						(1 - accAlpha) * (displayAccRef.current ?? accuracy);
 					accuracy = displayAccRef.current;
 
 					// Step limiter to prevent random spins during poor signal/high tilt
@@ -381,7 +428,7 @@ export function useCompass(options?: number | CompassOptions): CompassState {
 			}
 			smoothingFilter.current.clear();
 		};
-	}, [updateMs, axisFlipEW, useCross]);
+	}, [updateMs, axisFlipEW, useCross, isSimulator, simulatedHeading]);
 
 	return state;
 }
