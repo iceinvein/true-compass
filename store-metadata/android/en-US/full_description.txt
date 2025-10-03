@@ -1,0 +1,31 @@
+True Compass - Your Reliable Navigation Companion
+
+A precise, ad-free compass app that uses your device's magnetometer for accurate directional readings. Perfect for hiking, camping, sailing, or everyday navigation.
+
+<b>KEY FEATURES:</b>
+• Accurate magnetic heading with tilt compensation
+• Automatic sensor calibration with visual guidance
+• Clean, easy-to-read interface
+• Dark and light mode support
+• Works completely offline
+• No ads, no tracking, no subscriptions
+• Battery efficient
+
+<b>TECHNICAL FEATURES:</b>
+• Real-time magnetometer readings
+• Accelerometer-based tilt compensation
+• Automatic axis correction for device variations
+• Haptic feedback for better user experience
+
+Perfect for outdoor enthusiasts, travelers, and anyone who needs reliable directional information without internet connectivity.
+
+<b>PRIVACY FOCUSED:</b>
+No data collection. No permissions beyond sensors. Just a compass that works.
+
+<b>COMPLETELY FREE:</b>
+No ads, no in-app purchases, no subscriptions. True Compass is completely free to use forever.
+
+<b>WORKS OFFLINE:</b>
+No internet connection required. Use it anywhere, anytime.
+
+Download True Compass today and never lose your way!

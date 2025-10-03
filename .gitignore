@@ -46,3 +46,17 @@ app-example
 # store-assets/screenshots/
 # store-assets/promotional/*.png
 # store-assets/promotional/*.jpg
+
+# Store metadata - Private information (DO NOT COMMIT)
+store-metadata/ios/review_information/
+store-metadata/android/review_information/
+google-play-service-account.json
+*.json.key
+
+# Fastlane - Private
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots-downloaded/
+fastlane/test_output/
+fastlane/.env
+fastlane/.env.*

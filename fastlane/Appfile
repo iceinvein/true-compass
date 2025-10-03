@@ -1,0 +1,18 @@
+# Fastlane Appfile
+# This file contains app identifiers and Apple ID configuration
+
+# iOS App Identifier
+app_identifier("com.truecompass.app")
+
+# Your Apple ID email
+# apple_id("your-email@example.com")  # Uncomment and add your Apple ID
+
+# Team ID (optional - Fastlane will prompt if multiple teams)
+# team_id("YOUR_TEAM_ID")  # Uncomment and add your Team ID
+
+# iTunes Connect Team ID (if different from Developer Portal)
+# itc_team_id("YOUR_ITC_TEAM_ID")  # Uncomment if needed
+
+# For more information about the Appfile, see:
+# https://docs.fastlane.tools/advanced/#appfile
+

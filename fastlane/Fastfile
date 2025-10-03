@@ -1,0 +1,112 @@
+default_platform(:ios)
+
+platform :ios do
+  desc "Upload screenshots to App Store Connect"
+  lane :upload_screenshots do
+    deliver(
+      app_identifier: "com.truecompass.app",
+      skip_binary_upload: true,
+      skip_metadata: true,  # Skip metadata to avoid URL errors
+      skip_screenshots: false,
+      overwrite_screenshots: true,
+      screenshots_path: "./screenshots",
+      force: true  # Skip HTML preview
+    )
+  end
+
+  desc "Upload metadata only (no screenshots)"
+  lane :upload_metadata do
+    deliver(
+      app_identifier: "com.truecompass.app",
+      skip_binary_upload: true,
+      skip_metadata: false,
+      skip_screenshots: true,
+      metadata_path: "./store-metadata/ios",
+      force: true
+    )
+  end
+
+  desc "Upload both screenshots and metadata"
+  lane :upload_all do
+    deliver(
+      app_identifier: "com.truecompass.app",
+      skip_binary_upload: true,
+      skip_metadata: false,
+      skip_screenshots: false,
+      overwrite_screenshots: true,
+      screenshots_path: "./screenshots",
+      metadata_path: "./store-metadata/ios",
+      force: true
+    )
+  end
+
+  desc "Download existing screenshots from App Store Connect"
+  lane :download_screenshots do
+    deliver(
+      app_identifier: "com.truecompass.app",
+      download_screenshots: true,
+      screenshots_path: "./screenshots-downloaded"
+    )
+  end
+
+  desc "Download existing metadata from App Store Connect"
+  lane :download_metadata do
+    deliver(
+      app_identifier: "com.truecompass.app",
+      download_metadata: true,
+      metadata_path: "./store-metadata-downloaded/ios"
+    )
+  end
+end
+
+platform :android do
+  desc "Upload screenshots and metadata to Google Play"
+  lane :upload_screenshots do
+    supply(
+      package_name: "com.truecompass.app",
+      skip_upload_apk: true,
+      skip_upload_aab: true,
+      skip_upload_metadata: false,
+      skip_upload_images: false,
+      skip_upload_screenshots: false,
+      metadata_path: "./store-metadata/android"
+      # Note: Android screenshots go in metadata_path/en-US/images/phoneScreenshots/
+    )
+  end
+
+  desc "Upload metadata only (no screenshots)"
+  lane :upload_metadata do
+    supply(
+      package_name: "com.truecompass.app",
+      skip_upload_apk: true,
+      skip_upload_aab: true,
+      skip_upload_metadata: false,
+      skip_upload_images: true,
+      skip_upload_screenshots: true,
+      metadata_path: "./store-metadata/android"
+    )
+  end
+
+  desc "Upload both screenshots and metadata"
+  lane :upload_all do
+    supply(
+      package_name: "com.truecompass.app",
+      skip_upload_apk: true,
+      skip_upload_aab: true,
+      skip_upload_metadata: false,
+      skip_upload_images: false,
+      skip_upload_screenshots: false,
+      metadata_path: "./store-metadata/android"
+    )
+  end
+
+  desc "Download existing metadata from Google Play"
+  lane :download_metadata do
+    supply(
+      package_name: "com.truecompass.app",
+      download_metadata: true,
+      metadata_path: "./store-metadata-downloaded/android"
+    )
+  end
+end
+

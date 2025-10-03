@@ -16,7 +16,8 @@
       "buildNumber": "1",
       "infoPlist": {
         "NSMotionUsageDescription": "This app uses the magnetometer and accelerometer to provide accurate compass readings with tilt compensation.",
-        "UIRequiresFullScreen": false
+        "UIRequiresFullScreen": false,
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
