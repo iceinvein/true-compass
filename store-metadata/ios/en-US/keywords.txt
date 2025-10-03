@@ -1,1 +1,1 @@
-
+compass,navigation,direction,heading,magnetometer,hiking,camping,outdoor,offline,magnetic,north

@@ -22,6 +22,7 @@ platform :ios do
       skip_metadata: false,
       skip_screenshots: true,
       metadata_path: "./store-metadata/ios",
+      app_rating_config_path: "./store-metadata/ios/age_rating_config.json",
       force: true
     )
   end
@@ -36,6 +37,7 @@ platform :ios do
       overwrite_screenshots: true,
       screenshots_path: "./screenshots",
       metadata_path: "./store-metadata/ios",
+      app_rating_config_path: "./store-metadata/ios/age_rating_config.json",
       force: true
     )
   end

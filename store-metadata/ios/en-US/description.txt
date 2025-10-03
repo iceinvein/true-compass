@@ -1,1 +1,1 @@
-
+A precise, ad-free compass app that uses your device's magnetometer to provide accurate directional readings.

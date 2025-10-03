@@ -19,6 +19,13 @@ the correct screenshot slot in your app's metadata.
 
 ### Other Platforms
 
+#### iPad
+
+iPad screenshots should be stored in a subdirectory named `iPad` inside the language folder.
+Example: `en-US/iPad/01-ipadPro129-dark.png`
+
+iPad Pro 12.9" (3rd gen) screenshots must include `ipadPro129` in the filename.
+
 #### Apple TV
 
 Apple TV screenshots should be stored in a subdirectory named `appleTV` with language
