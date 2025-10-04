@@ -1,4 +1,4 @@
-import { type ExecException, exec } from "node:child_process";
+import { type ExecException, exec, spawn } from "node:child_process";
 import { promisify } from "node:util";
 
 const execAsync = promisify(exec);
@@ -8,6 +8,12 @@ export interface CommandResult {
 	stderr: string;
 	success: boolean;
 	error?: Error;
+}
+
+export interface StreamingCommandOptions {
+	onOutput?: (data: string, type: 'stdout' | 'stderr') => void;
+	onComplete?: (result: CommandResult) => void;
+	interactive?: boolean;
 }
 
 export async function runCommand(command: string): Promise<CommandResult> {
@@ -34,6 +40,77 @@ export async function runCommand(command: string): Promise<CommandResult> {
 	}
 }
 
+export function runCommandStreaming(
+	command: string,
+	options: StreamingCommandOptions = {}
+): Promise<CommandResult> {
+	return new Promise((resolve) => {
+		// For interactive commands, we need to use inherit for all stdio
+		// so the user can interact directly with the terminal
+		const child = spawn('sh', ['-c', command], {
+			cwd: process.cwd(),
+			stdio: options.interactive ? 'inherit' : ['inherit', 'pipe', 'pipe'],
+		});
+
+		let stdout = '';
+		let stderr = '';
+
+		// Only capture output for non-interactive commands
+		if (!options.interactive) {
+			child.stdout?.on('data', (data) => {
+				const text = data.toString();
+				stdout += text;
+				options.onOutput?.(text, 'stdout');
+			});
+
+			child.stderr?.on('data', (data) => {
+				const text = data.toString();
+				stderr += text;
+				options.onOutput?.(text, 'stderr');
+			});
+		}
+
+		child.on('close', (code) => {
+			// Enhanced error message with more context
+			let errorMessage = '';
+			if (code !== 0) {
+				errorMessage = `Command failed with exit code ${code}`;
+				if (stderr) {
+					errorMessage += `\nStderr: ${stderr}`;
+				}
+				if (stdout) {
+					errorMessage += `\nStdout: ${stdout}`;
+				}
+				if (!stderr && !stdout) {
+					errorMessage += '\nNo output captured. Command may have failed silently.';
+				}
+			}
+
+			const result: CommandResult = {
+				stdout,
+				stderr,
+				success: code === 0,
+				error: code !== 0 ? new Error(errorMessage) : undefined,
+			};
+
+			options.onComplete?.(result);
+			resolve(result);
+		});
+
+		child.on('error', (error) => {
+			const result: CommandResult = {
+				stdout,
+				stderr: `${stderr}\nProcess error: ${error.message}`,
+				success: false,
+				error,
+			};
+
+			options.onComplete?.(result);
+			resolve(result);
+		});
+	});
+}
+
 // Build commands
 export const buildIOSProduction = () =>
 	runCommand("eas build --platform ios --profile production --non-interactive");
@@ -48,16 +125,68 @@ export const buildAndroidPreview = () =>
 		"eas build --platform android --profile preview --non-interactive",
 	);
 
-// Upload commands
-export const uploadScreenshots = () =>
+// Upload commands - iOS
+export const uploadIOSScreenshots = () =>
 	runCommand("fastlane ios upload_screenshots");
-export const uploadMetadata = () => runCommand("fastlane ios upload_metadata");
-export const uploadAll = () => runCommand("fastlane ios upload_all");
+export const uploadIOSMetadata = () => runCommand("fastlane ios upload_metadata");
+export const uploadIOSAll = () => runCommand("fastlane ios upload_all");
+
+// Upload commands - Android (with service account setup)
+export const uploadAndroidScreenshots = () =>
+	runCommand("export SUPPLY_JSON_KEY='./true-compass-474103-ab743809782a.json' && fastlane android upload_screenshots");
+export const uploadAndroidMetadata = () =>
+	runCommand("export SUPPLY_JSON_KEY='./true-compass-474103-ab743809782a.json' && fastlane android upload_metadata");
+export const uploadAndroidAll = () =>
+	runCommand("export SUPPLY_JSON_KEY='./true-compass-474103-ab743809782a.json' && fastlane android upload_all");
+
+// Legacy commands (for backward compatibility)
+export const uploadScreenshots = () => uploadIOSScreenshots();
+export const uploadMetadata = () => uploadIOSMetadata();
+export const uploadAll = () => uploadIOSAll();
 
 // Submit commands
 export const submitIOS = () => runCommand("eas submit --platform ios --latest");
 export const submitAndroid = () =>
-	runCommand("eas submit --platform android --latest");
+	runCommand("export SUPPLY_JSON_KEY='./true-compass-474103-ab743809782a.json' && eas submit --platform android --latest");
+
+// Streaming versions for commands that produce lots of output
+export const submitIOSStreaming = (options: StreamingCommandOptions) =>
+	runCommandStreaming("eas submit --platform ios --latest", options);
+export const submitAndroidStreaming = (options: StreamingCommandOptions) =>
+	runCommandStreaming("export SUPPLY_JSON_KEY='./true-compass-474103-ab743809782a.json' && eas submit --platform android --latest", options);
+
+export const buildIOSProductionStreaming = (options: StreamingCommandOptions) =>
+	runCommandStreaming("eas build --platform ios --profile production", options);
+export const buildIOSPreviewStreaming = (options: StreamingCommandOptions) =>
+	runCommandStreaming("eas build --platform ios --profile preview", options);
+export const buildAndroidProductionStreaming = (options: StreamingCommandOptions) =>
+	runCommandStreaming("eas build --platform android --profile production", options);
+export const buildAndroidPreviewStreaming = (options: StreamingCommandOptions) =>
+	runCommandStreaming("eas build --platform android --profile preview", options);
+
+// iOS streaming upload commands
+export const uploadIOSScreenshotsStreaming = (options: StreamingCommandOptions) =>
+	runCommandStreaming("fastlane ios upload_screenshots", options);
+export const uploadIOSMetadataStreaming = (options: StreamingCommandOptions) =>
+	runCommandStreaming("fastlane ios upload_metadata", options);
+export const uploadIOSAllStreaming = (options: StreamingCommandOptions) =>
+	runCommandStreaming("fastlane ios upload_all", options);
+
+// Android streaming upload commands (with service account setup)
+export const uploadAndroidScreenshotsStreaming = (options: StreamingCommandOptions) =>
+	runCommandStreaming("export SUPPLY_JSON_KEY='./true-compass-474103-ab743809782a.json' && fastlane android upload_screenshots", options);
+export const uploadAndroidMetadataStreaming = (options: StreamingCommandOptions) =>
+	runCommandStreaming("export SUPPLY_JSON_KEY='./true-compass-474103-ab743809782a.json' && fastlane android upload_metadata", options);
+export const uploadAndroidAllStreaming = (options: StreamingCommandOptions) =>
+	runCommandStreaming("export SUPPLY_JSON_KEY='./true-compass-474103-ab743809782a.json' && fastlane android upload_all", options);
+
+// Legacy streaming commands (for backward compatibility)
+export const uploadScreenshotsStreaming = (options: StreamingCommandOptions) =>
+	uploadIOSScreenshotsStreaming(options);
+export const uploadMetadataStreaming = (options: StreamingCommandOptions) =>
+	uploadIOSMetadataStreaming(options);
+export const uploadAllStreaming = (options: StreamingCommandOptions) =>
+	uploadIOSAllStreaming(options);
 
 // Status commands
 export const checkBuildStatus = async (): Promise<CommandResult> => {
@@ -119,11 +248,11 @@ export async function fullIOSDeploy(): Promise<CommandResult[]> {
 	if (!results[results.length - 1].success) return results;
 
 	// Step 2: Upload screenshots
-	results.push(await uploadScreenshots());
+	results.push(await uploadIOSScreenshots());
 	if (!results[results.length - 1].success) return results;
 
 	// Step 3: Upload metadata
-	results.push(await uploadMetadata());
+	results.push(await uploadIOSMetadata());
 	if (!results[results.length - 1].success) return results;
 
 	// Step 4: Submit
@@ -140,7 +269,7 @@ export async function fullAndroidDeploy(): Promise<CommandResult[]> {
 	if (!results[results.length - 1].success) return results;
 
 	// Step 2: Upload metadata
-	results.push(await uploadMetadata());
+	results.push(await uploadAndroidMetadata());
 	if (!results[results.length - 1].success) return results;
 
 	// Step 3: Submit
