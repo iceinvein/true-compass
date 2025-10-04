@@ -30,6 +30,9 @@
       "permissions": [
         "android.permission.VIBRATE"
       ],
+      "blockedPermissions": [
+        "android.permission.ACTIVITY_RECOGNITION"
+      ],
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
     },
