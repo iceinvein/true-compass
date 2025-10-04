@@ -6,9 +6,9 @@ import * as Haptics from "expo-haptics";
 import { useEffect, useState } from "react";
 import { Alert, Dimensions, Pressable, StyleSheet, View } from "react-native";
 import Animated, {
-	useAnimatedStyle,
-	useSharedValue,
-	withSpring,
+    useAnimatedStyle,
+    useSharedValue,
+    withSpring,
 } from "react-native-reanimated";
 import { CompassError } from "./compass-error";
 import { LoadingCompass } from "./loading-compass";
@@ -29,11 +29,15 @@ export function Compass({
 	colorScheme = "dark",
 	onToggleTheme,
 }: CompassProps) {
-	// Detect if running in iOS Simulator (not Expo Go on real device)
-	// Constants.isDevice is false for both simulator AND Expo Go
-	// Check executionEnvironment: 'standalone' = production app, 'storeClient' = Expo Go
+	// Detect if running in iOS Simulator
+	// Constants.isDevice: false/undefined = simulator, true = real device
+	// Constants.executionEnvironment: 'storeClient' = Expo Go, 'standalone' = production
+	// For development: isDevice is undefined and executionEnvironment is 'storeClient' in simulator
+	// For production: isDevice is false and executionEnvironment is 'standalone' in simulator
 	const isSimulator =
-		!Constants.isDevice && Constants.executionEnvironment === "standalone";
+		(Constants.isDevice === false || Constants.isDevice === undefined) &&
+		(Constants.executionEnvironment === "standalone" ||
+			Constants.executionEnvironment === "storeClient");
 	const [simulatedHeading, setSimulatedHeading] = useState<number>(0);
 	const [showSimulationControls, setShowSimulationControls] =
 		useState<boolean>(true);

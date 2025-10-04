@@ -23,11 +23,15 @@ export default function CompassScreen() {
 	const [axisFlip, setAxisFlip] = useState<boolean>(false);
 	const [colorScheme, setColorScheme] = useState<"light" | "dark" | null>(null);
 
-	// Detect if running in iOS Simulator (not Expo Go on real device)
-	// Constants.isDevice is false for both simulator AND Expo Go
-	// Check executionEnvironment: 'standalone' = production app, 'storeClient' = Expo Go
+	// Detect if running in iOS Simulator
+	// Constants.isDevice: false/undefined = simulator, true = real device
+	// Constants.executionEnvironment: 'storeClient' = Expo Go, 'standalone' = production
+	// For development: isDevice is undefined and executionEnvironment is 'storeClient' in simulator
+	// For production: isDevice is false and executionEnvironment is 'standalone' in simulator
 	const isSimulator =
-		!Constants.isDevice && Constants.executionEnvironment === "standalone";
+		(Constants.isDevice === false || Constants.isDevice === undefined) &&
+		(Constants.executionEnvironment === "standalone" ||
+			Constants.executionEnvironment === "storeClient");
 
 	useEffect(() => {
 		// In simulator mode, skip setup automatically

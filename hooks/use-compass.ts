@@ -122,10 +122,14 @@ export function useCompass(options?: number | CompassOptions): CompassState {
 	const useCross = opts.useCrossProduct !== false; // default true
 	const simulatedHeading = opts.simulatedHeading;
 
-	// Detect if running in iOS Simulator (not Expo Go on real device)
-	// Constants.isDevice is false for both simulator AND Expo Go
-	// Check executionEnvironment: 'standalone' = production app, 'storeClient' = Expo Go
-	const isSimulator = !Constants.isDevice && Constants.executionEnvironment === 'standalone';
+	// Detect if running in iOS Simulator
+	// Constants.isDevice: false/undefined = simulator, true = real device
+	// Constants.executionEnvironment: 'storeClient' = Expo Go, 'standalone' = production
+	// For development: isDevice is undefined and executionEnvironment is 'storeClient' in simulator
+	// For production: isDevice is false and executionEnvironment is 'standalone' in simulator
+	const isSimulator =
+		(Constants.isDevice === false || Constants.isDevice === undefined) &&
+		(Constants.executionEnvironment === "standalone" || Constants.executionEnvironment === "storeClient");
 
 	const [state, setState] = useState<CompassState>({
 		data: null,
