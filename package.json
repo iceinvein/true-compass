@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "description": "A precise, ad-free compass app using device magnetometer with tilt compensation",
   "main": "expo-router/entry",
+  "type": "module",
   "author": "True Compass Team",
   "license": "UNLICENSED",
   "keywords": [
@@ -22,7 +23,8 @@
     "lint": "expo lint",
     "build:ios": "eas build --platform ios",
     "build:android": "eas build --platform android",
-    "build:all": "eas build --platform all"
+    "build:all": "eas build --platform all",
+    "deploy": "npx tsx --tsconfig cli/tsconfig.json cli/index.ts"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.2",
@@ -56,11 +58,18 @@
     "react-native-worklets": "0.5.1"
   },
   "devDependencies": {
+    "@types/node": "^24.6.2",
     "@types/react": "~19.1.0",
-    "typescript": "~5.9.2",
     "eslint": "^9.25.0",
-    "eslint-config-expo": "~10.0.0"
+    "eslint-config-expo": "~10.0.0",
+    "ink": "^6.3.1",
+    "ink-big-text": "^2.0.0",
+    "ink-box": "^2.0.0",
+    "ink-gradient": "^3.0.0",
+    "ink-select-input": "^6.2.0",
+    "ink-spinner": "^5.0.0",
+    "tsx": "^4.20.6",
+    "typescript": "~5.9.2"
   },
-  "private": true,
-  "packageManager": "yarn@1.22.22+sha1.ac34549e6aa8e7ead463a7407e1c7390f61a6610"
+  "private": true
 }
